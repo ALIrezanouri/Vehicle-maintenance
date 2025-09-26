@@ -9,6 +9,7 @@ from datetime import datetime, date
 from typing import Union, Optional, Dict, List
 from fastapi import HTTPException
 from pydantic import ValidationError
+from vehicles.models import LicensePlateData
 
 # Iranian license plate patterns
 LICENSE_PLATE_PATTERNS = [
@@ -96,6 +97,72 @@ def normalize_license_plate(plate: str) -> str:
     # Remove extra spaces and normalize
     return plate.replace(' ', '').replace('-', '').upper()
 
+def format_license_plate_data(plate_data: LicensePlateData) -> str:
+    """
+    Format license plate data into a string.
+    
+    Args:
+        plate_data (LicensePlateData): License plate data object
+        
+    Returns:
+        str: Formatted license plate string
+    """
+    if not plate_data:
+        return ""
+    
+    # Check if it's a motorcycle (no serial)
+    if not plate_data.plaqueSerial:
+        return f"{plate_data.plaqueLeftNo}{plate_data.plaqueMiddleChar}{plate_data.plaqueRightNo}"
+    
+    # Default to car plate format
+    return f"{plate_data.plaqueLeftNo}{plate_data.plaqueMiddleChar}{plate_data.plaqueRightNo}-{plate_data.plaqueSerial}"
+
+def parse_license_plate_string(plate_string: str) -> LicensePlateData:
+    """
+    Parse license plate string into LicensePlateData object.
+    
+    Args:
+        plate_string (str): License plate string
+        
+    Returns:
+        LicensePlateData: Parsed license plate data
+    """
+    if not plate_string:
+        return LicensePlateData(
+            plaqueLeftNo="",
+            plaqueMiddleChar="",
+            plaqueRightNo="",
+            plaqueSerial=""
+        )
+    
+    # Try to parse as car plate (format like "123ب456-78")
+    car_match = re.match(r'^(\d{2})([آابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی])(\d{3})-(\d{2})$', plate_string)
+    if car_match:
+        return LicensePlateData(
+            plaqueLeftNo=car_match.group(1),
+            plaqueMiddleChar=car_match.group(2),
+            plaqueRightNo=car_match.group(3),
+            plaqueSerial=car_match.group(4)
+        )
+    
+    # Try to parse as motorcycle plate (format like "12345678")
+    motorcycle_match = re.match(r'^(\d{3})([آابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی])(\d{3})$', plate_string)
+    if motorcycle_match:
+        return LicensePlateData(
+            plaqueLeftNo=motorcycle_match.group(1),
+            plaqueMiddleChar=motorcycle_match.group(2),
+            plaqueRightNo=motorcycle_match.group(3),
+            plaqueSerial=""
+        )
+    
+    # Default empty plate
+    return LicensePlateData(
+        plaqueLeftNo="",
+        plaqueMiddleChar="",
+        plaqueRightNo="",
+        plaqueSerial=""
+    )
+
 def jalali_to_gregorian(year: int, month: int, day: int) -> date:
     """
     Convert Jalali date to Gregorian date.
@@ -109,13 +176,12 @@ def jalali_to_gregorian(year: int, month: int, day: int) -> date:
         date: Gregorian date
     """
     try:
-        jalali_date = jdatetime.date(year, month, day)
-        gregorian_date = jalali_date.togregorian()
+        gregorian_date = jdatetime.date(year, month, day).togregorian()
         return gregorian_date
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid Jalali date")
+        raise HTTPException(status_code=400, detail="تاریخ نامعتبر است")
 
-def gregorian_to_jalali(date_obj: date) -> dict:
+def gregorian_to_jalali(date_obj: date) -> Dict[str, int]:
     """
     Convert Gregorian date to Jalali date.
     
@@ -123,161 +189,14 @@ def gregorian_to_jalali(date_obj: date) -> dict:
         date_obj (date): Gregorian date object
         
     Returns:
-        dict: Dictionary with jalali year, month, day
+        Dict[str, int]: Jalali date as dictionary with year, month, day keys
     """
-    try:
-        jalali_date = jdatetime.date.fromgregorian(date=date_obj)
-        return {
-            'year': jalali_date.year,
-            'month': jalali_date.month,
-            'day': jalali_date.day
-        }
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid Gregorian date")
-
-def format_jalali_date(jalali_date: jdatetime.date, format_type: str = 'full') -> str:
-    """
-    Format Jalali date for display.
-    
-    Args:
-        jalali_date: Jalali date object
-        format_type: 'full', 'short', or 'numeric'
-        
-    Returns:
-        str: Formatted date string
-    """
-    if not jalali_date:
-        return ''
-    
-    if format_type == 'full':
-        return jalali_date.strftime('%A، %d %B %Y')
-    elif format_type == 'short':
-        return jalali_date.strftime('%d %b %Y')
-    else:  # numeric
-        return jalali_date.strftime('%Y/%m/%d')
-
-def validate_iranian_phone_number(phone_number: str) -> bool:
-    """
-    Validate Iranian phone number format.
-    
-    Args:
-        phone_number (str): Phone number to validate
-        
-    Returns:
-        bool: True if valid, False otherwise
-    """
-    if not phone_number:
-        return False
-    
-    # Remove spaces, dashes, and plus signs
-    phone = re.sub(r'[\s\-\+]', '', phone_number)
-    
-    # Iranian mobile patterns
-    mobile_patterns = [
-        r'^09[0-9]{9}$',  # 09xxxxxxxxx
-        r'^989[0-9]{9}$',  # 989xxxxxxxxx
-        r'^00989[0-9]{9}$',  # 00989xxxxxxxxx
-    ]
-    
-    # Iranian landline patterns (area codes)
-    landline_patterns = [
-        r'^0[1-8][0-9]{8,9}$',  # 0xxxxxxxxxx
-    ]
-    
-    all_patterns = mobile_patterns + landline_patterns
-    
-    for pattern in all_patterns:
-        if re.match(pattern, phone):
-            return True
-    
-    return False
-
-def normalize_iranian_phone_number(phone_number: str) -> str:
-    """
-    Normalize Iranian phone number for storage.
-    
-    Args:
-        phone_number (str): Phone number to normalize
-        
-    Returns:
-        str: Normalized phone number (09xxxxxxxxx format for mobile)
-    """
-    if not phone_number:
-        return ''
-    
-    # Remove spaces, dashes, and plus signs
-    phone = re.sub(r'[\s\-\+]', '', phone_number)
-    
-    # Convert international format to local
-    if phone.startswith('00989'):
-        phone = '0' + phone[4:]
-    elif phone.startswith('989'):
-        phone = '0' + phone[2:]
-    
-    return phone
-
-def calculate_service_urgency(last_service_date: date, interval_days: int, current_mileage: int, 
-                            last_service_mileage: int, interval_mileage: int) -> str:
-    """
-    Calculate service urgency based on date and mileage.
-    
-    Args:
-        last_service_date: Date of last service
-        interval_days: Service interval in days
-        current_mileage: Current vehicle mileage
-        last_service_mileage: Mileage at last service
-        interval_mileage: Service interval in kilometers
-        
-    Returns:
-        str: 'normal', 'important', or 'urgent'
-    """
-    today = datetime.now().date()
-    
-    # Calculate days since last service
-    days_since_service = (today - last_service_date).days
-    days_ratio = days_since_service / interval_days if interval_days > 0 else 0
-    
-    # Calculate mileage since last service
-    mileage_since_service = current_mileage - last_service_mileage
-    mileage_ratio = mileage_since_service / interval_mileage if interval_mileage > 0 else 0
-    
-    # Use the higher ratio to determine urgency
-    max_ratio = max(days_ratio, mileage_ratio)
-    
-    if max_ratio >= 1.0:  # Overdue
-        return 'urgent'
-    elif max_ratio >= 0.8:  # 80% of interval reached
-        return 'important'
-    else:
-        return 'normal'
-
-def calculate_next_service_date(last_service_date: date, interval_days: int) -> date:
-    """
-    Calculate next service date based on interval.
-    
-    Args:
-        last_service_date: Date of last service
-        interval_days: Service interval in days
-        
-    Returns:
-        date: Next service date
-    """
-    from datetime import timedelta
-    return last_service_date + timedelta(days=interval_days)
-
-def calculate_next_service_mileage(last_mileage: int, service_type: str) -> int:
-    """
-    Calculate next service mileage based on service type.
-    
-    Args:
-        last_mileage (int): Last service mileage
-        service_type (str): Type of service
-        
-    Returns:
-        int: Next service mileage
-    """
-    interval = STANDARD_SERVICE_INTERVALS.get(service_type, 5000)
-    return last_mileage + interval
+    jalali_date = jdatetime.date.fromgregorian(date=date_obj)
+    return {
+        "year": jalali_date.year,
+        "month": jalali_date.month,
+        "day": jalali_date.day
+    }
 
 def validate_mileage(mileage: int) -> bool:
     """
@@ -289,133 +208,41 @@ def validate_mileage(mileage: int) -> bool:
     Returns:
         bool: True if valid, False otherwise
     """
-    # Mileage should be positive and reasonable (less than 1 million km)
-    return 0 <= mileage <= 1000000
+    # Mileage should be a positive integer not exceeding 1,000,000 km
+    return isinstance(mileage, int) and 0 <= mileage <= 1000000
 
-def format_mileage(mileage: int) -> str:
-    """
-    Format mileage for display with Persian numbers and units.
-    
-    Args:
-        mileage: Mileage in kilometers
-        
-    Returns:
-        str: Formatted mileage string
-    """
-    if mileage >= 1000:
-        return f"{mileage:,} کیلومتر"
-    else:
-        return f"{mileage} کیلومتر"
-
-def format_persian_number(number: Union[int, float]) -> str:
-    """
-    Format number with Persian digits.
-    
-    Args:
-        number (Union[int, float]): Number to format
-        
-    Returns:
-        str: Number formatted with Persian digits
-    """
-    persian_digits = '۰۱۲۳۴۵۶۷۸۹'
-    english_digits = '0123456789'
-    
-    number_str = str(number)
-    for i in range(10):
-        number_str = number_str.replace(english_digits[i], persian_digits[i])
-        
-    return number_str
-
-def get_persian_month_name(month_number: int) -> str:
-    """
-    Get Persian month name by month number.
-    
-    Args:
-        month_number (int): Month number (1-12)
-        
-    Returns:
-        str: Persian month name
-    """
-    if 1 <= month_number <= 12:
-        return PERSIAN_MONTHS[month_number - 1]
-    return ""
-
-def generate_service_reminder_text(service_name: str, vehicle_info: str, due_date: str) -> str:
-    """
-    Generate SMS text for service reminder.
-    
-    Args:
-        service_name: Name of the service
-        vehicle_info: Vehicle information (brand, model, plate)
-        due_date: Due date in Persian
-        
-    Returns:
-        str: SMS text in Persian
-    """
-    return f"""سلام
-یادآوری سرویس {service_name} برای خودروی {vehicle_info}
-تاریخ سررسید: {due_date}
-ماشین‌من"""
-
-def get_iranian_car_brands() -> list:
+def get_iranian_car_brands() -> List[str]:
     """
     Get list of Iranian car brands.
     
     Returns:
-        list: List of Iranian car brands
+        List[str]: List of Iranian car brands
     """
-    return IRANIAN_CAR_BRANDS.copy()
+    return IRANIAN_CAR_BRANDS
 
-def get_service_types() -> list:
+def get_service_types() -> List[str]:
     """
     Get list of service types.
     
     Returns:
-        list: List of service types
+        List[str]: List of service types
     """
-    return SERVICE_TYPES.copy()
+    return SERVICE_TYPES
 
-def validate_phone_number(phone: str) -> bool:
+def get_standard_service_intervals() -> Dict[str, int]:
     """
-    Validate Iranian phone number format.
+    Get standard service intervals.
     
-    Args:
-        phone (str): Phone number to validate
-        
     Returns:
-        bool: True if valid, False otherwise
+        Dict[str, int]: Dictionary of service types and their standard intervals in kilometers
     """
-    pattern = r'^(\+98|0)?9\d{9}$'
-    return bool(re.match(pattern, phone))
+    return STANDARD_SERVICE_INTERVALS
 
-def sanitize_input(input_str: str) -> str:
+def get_persian_months() -> List[str]:
     """
-    Sanitize user input to prevent injection attacks.
+    Get list of Persian months.
     
-    Args:
-        input_str (str): Input string to sanitize
-        
     Returns:
-        str: Sanitized string
+        List[str]: List of Persian months
     """
-    if not input_str:
-        return ""
-        
-    # Remove potentially dangerous characters
-    sanitized = re.sub(r'[<>"\']', '', input_str)
-    return sanitized.strip()
-
-# Custom validation error for better error handling
-class CustomValidationError(Exception):
-    def __init__(self, message: str):
-        self.message = message
-        super().__init__(self.message)
-
-# Custom exceptions for specific validation errors
-class InvalidLicensePlateException(CustomValidationError):
-    def __init__(self, message: str = "فرمت پلاک نامعتبر است"):
-        super().__init__(message)
-
-class InvalidMileageException(CustomValidationError):
-    def __init__(self, message: str = "کیلومتر نامعتبر است"):
-        super().__init__(message)
+    return PERSIAN_MONTHS

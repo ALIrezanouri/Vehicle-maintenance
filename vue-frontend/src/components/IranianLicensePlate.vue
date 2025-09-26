@@ -16,47 +16,47 @@
       <!-- Car plate input fields -->
       <template v-if="type === 'car' && !readonly">
         <input 
-          v-model="plate.firstTwoDigits[0]" 
-          @input="moveToNext($event, 'firstTwoDigits', 1)" 
-          @keydown="handleKeyDown($event, 'firstTwoDigits', 0)"
+          v-model="plate.plaqueLeftNo[0]" 
+          @input="moveToNext($event, 'plaqueLeftNo', 1)" 
+          @keydown="handleKeyDown($event, 'plaqueLeftNo', 0)"
           type="text" 
           maxlength="1" 
           class="digit-input"
         >
         <input 
-          v-model="plate.firstTwoDigits[1]" 
-          @input="moveToNext($event, 'firstTwoDigits', 2, 'letter')" 
-          @keydown="handleKeyDown($event, 'firstTwoDigits', 1, 'firstTwoDigits', 0)"
+          v-model="plate.plaqueLeftNo[1]" 
+          @input="moveToNext($event, 'plaqueLeftNo', 2, 'plaqueMiddleChar')" 
+          @keydown="handleKeyDown($event, 'plaqueLeftNo', 1, 'plaqueLeftNo', 0)"
           type="text" 
           maxlength="1" 
           class="digit-input"
         >
-        <select v-model="plate.letter" class="letter-select">
+        <select v-model="plate.plaqueMiddleChar" class="letter-select">
           <option value="">انتخاب حرف</option>
           <option v-for="letter in persianLetters" :key="letter" :value="letter">
             {{ letter }}
           </option>
         </select>
         <input 
-          v-model="plate.nextThreeDigits[0]" 
-          @input="moveToNext($event, 'nextThreeDigits', 1)" 
-          @keydown="handleKeyDown($event, 'letter', 0)"
+          v-model="plate.plaqueRightNo[0]" 
+          @input="moveToNext($event, 'plaqueRightNo', 1)" 
+          @keydown="handleKeyDown($event, 'plaqueMiddleChar', 0)"
           type="text" 
           maxlength="1" 
           class="digit-input"
         >
         <input 
-          v-model="plate.nextThreeDigits[1]" 
-          @input="moveToNext($event, 'nextThreeDigits', 2)" 
-          @keydown="handleKeyDown($event, 'nextThreeDigits', 0)"
+          v-model="plate.plaqueRightNo[1]" 
+          @input="moveToNext($event, 'plaqueRightNo', 2)" 
+          @keydown="handleKeyDown($event, 'plaqueRightNo', 0)"
           type="text" 
           maxlength="1" 
           class="digit-input"
         >
         <input 
-          v-model="plate.nextThreeDigits[2]" 
-          @input="moveToNext($event, 'nextThreeDigits', 3, 'lastTwoDigits')" 
-          @keydown="handleKeyDown($event, 'nextThreeDigits', 1)"
+          v-model="plate.plaqueRightNo[2]" 
+          @input="moveToNext($event, 'plaqueRightNo', 3, 'plaqueSerial')" 
+          @keydown="handleKeyDown($event, 'plaqueRightNo', 1)"
           type="text" 
           maxlength="1" 
           class="digit-input"
@@ -65,17 +65,17 @@
           <span>ایــران</span>
           <div>
             <input 
-              v-model="plate.lastTwoDigits[0]" 
-              @input="moveToNext($event, 'lastTwoDigits', 1)" 
-              @keydown="handleKeyDown($event, 'nextThreeDigits', 2)"
+              v-model="plate.plaqueSerial[0]" 
+              @input="moveToNext($event, 'plaqueSerial', 1)" 
+              @keydown="handleKeyDown($event, 'plaqueRightNo', 2)"
               type="text" 
               maxlength="1" 
               class="digit-input-small"
             >
             <input 
-              v-model="plate.lastTwoDigits[1]" 
-              @input="moveToNext($event, 'lastTwoDigits', 2)" 
-              @keydown="handleKeyDown($event, 'lastTwoDigits', 0)"
+              v-model="plate.plaqueSerial[1]" 
+              @input="moveToNext($event, 'plaqueSerial', 2)" 
+              @keydown="handleKeyDown($event, 'plaqueSerial', 0)"
               type="text" 
               maxlength="1" 
               class="digit-input-small"
@@ -87,72 +87,72 @@
       <!-- Car plate display (readonly) -->
       <template v-else-if="type === 'car' && readonly">
         <span>
-          {{ plate.firstTwoDigits.join('') }}
+          {{ plate.plaqueLeftNo }}
         </span>
         <span class="alphabet-column">
-          {{ plate.letter }}
+          {{ plate.plaqueMiddleChar }}
         </span>
         <span>
-          {{ plate.nextThreeDigits.join('') }}
+          {{ plate.plaqueRightNo }}
         </span>
         <div class="iran-column">
           <span>ایــران</span>
-          <strong>{{ plate.lastTwoDigits.join('') }}</strong>
+          <strong>{{ plate.plaqueSerial }}</strong>
         </div>
       </template>
       
       <!-- Motorcycle plate input fields -->
       <template v-else-if="type === 'motorcycle' && !readonly">
         <input 
-          v-model="plate.motorcycleDigits[0]" 
-          @input="moveToNext($event, 'motorcycleDigits', 1)" 
-          @keydown="handleKeyDown($event, 'motorcycleDigits', 0)"
+          v-model="plate.plaqueLeftNo[0]" 
+          @input="moveToNext($event, 'plaqueLeftNo', 1)" 
+          @keydown="handleKeyDown($event, 'plaqueLeftNo', 0)"
           type="text" 
           maxlength="1" 
           class="digit-input"
         >
         <input 
-          v-model="plate.motorcycleDigits[1]" 
-          @input="moveToNext($event, 'motorcycleDigits', 2)" 
-          @keydown="handleKeyDown($event, 'motorcycleDigits', 1, 'motorcycleDigits', 0)"
+          v-model="plate.plaqueLeftNo[1]" 
+          @input="moveToNext($event, 'plaqueLeftNo', 2)" 
+          @keydown="handleKeyDown($event, 'plaqueLeftNo', 1, 'plaqueLeftNo', 0)"
           type="text" 
           maxlength="1" 
           class="digit-input"
         >
         <input 
-          v-model="plate.motorcycleDigits[2]" 
-          @input="moveToNext($event, 'motorcycleDigits', 3, 'motorcycleLetter')" 
-          @keydown="handleKeyDown($event, 'motorcycleDigits', 2, 'motorcycleDigits', 1)"
+          v-model="plate.plaqueLeftNo[2]" 
+          @input="moveToNext($event, 'plaqueLeftNo', 3, 'plaqueMiddleChar')" 
+          @keydown="handleKeyDown($event, 'plaqueLeftNo', 2, 'plaqueLeftNo', 1)"
           type="text" 
           maxlength="1" 
           class="digit-input"
         >
-        <select v-model="plate.motorcycleLetter" class="letter-select">
+        <select v-model="plate.plaqueMiddleChar" class="letter-select">
           <option value="">انتخاب حرف</option>
           <option v-for="letter in persianLetters" :key="letter" :value="letter">
             {{ letter }}
           </option>
         </select>
         <input 
-          v-model="plate.motorcycleLastDigits[0]" 
-          @input="moveToNext($event, 'motorcycleLastDigits', 1)" 
-          @keydown="handleKeyDown($event, 'motorcycleLetter', 0)"
+          v-model="plate.plaqueRightNo[0]" 
+          @input="moveToNext($event, 'plaqueRightNo', 1)" 
+          @keydown="handleKeyDown($event, 'plaqueMiddleChar', 0)"
           type="text" 
           maxlength="1" 
           class="digit-input"
         >
         <input 
-          v-model="plate.motorcycleLastDigits[1]" 
-          @input="moveToNext($event, 'motorcycleLastDigits', 2)" 
-          @keydown="handleKeyDown($event, 'motorcycleLastDigits', 0)"
+          v-model="plate.plaqueRightNo[1]" 
+          @input="moveToNext($event, 'plaqueRightNo', 2)" 
+          @keydown="handleKeyDown($event, 'plaqueRightNo', 0)"
           type="text" 
           maxlength="1" 
           class="digit-input"
         >
         <input 
-          v-model="plate.motorcycleLastDigits[2]" 
-          @input="moveToNext($event, 'motorcycleLastDigits', 3)" 
-          @keydown="handleKeyDown($event, 'motorcycleLastDigits', 1)"
+          v-model="plate.plaqueRightNo[2]" 
+          @input="moveToNext($event, 'plaqueRightNo', 3)" 
+          @keydown="handleKeyDown($event, 'plaqueRightNo', 1)"
           type="text" 
           maxlength="1" 
           class="digit-input"
@@ -166,13 +166,13 @@
       <!-- Motorcycle plate display (readonly) -->
       <template v-else-if="type === 'motorcycle' && readonly">
         <span>
-          {{ plate.motorcycleDigits.join('') }}
+          {{ plate.plaqueLeftNo }}
         </span>
         <span class="alphabet-column">
-          {{ plate.motorcycleLetter }}
+          {{ plate.plaqueMiddleChar }}
         </span>
         <span>
-          {{ plate.motorcycleLastDigits.join('') }}
+          {{ plate.plaqueRightNo }}
         </span>
         <div class="iran-column">
           <span>ایــران</span>
@@ -194,13 +194,10 @@ export default {
     modelValue: {
       type: Object,
       default: () => ({
-        firstTwoDigits: ['', ''],
-        letter: '',
-        nextThreeDigits: ['', '', ''],
-        lastTwoDigits: ['', ''],
-        motorcycleDigits: ['', '', ''],
-        motorcycleLetter: '',
-        motorcycleLastDigits: ['', '', '']
+        plaqueLeftNo: '',
+        plaqueMiddleChar: '',
+        plaqueRightNo: '',
+        plaqueSerial: ''
       })
     },
     readonly: {

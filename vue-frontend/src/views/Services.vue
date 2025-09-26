@@ -7,82 +7,53 @@
       </button>
     </div>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="service in services" :key="service.id" class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-        <div class="flex justify-between items-start">
-          <div>
-            <h3 class="text-xl font-semibold">{{ service.name }}</h3>
-            <div class="mt-2 flex items-center space-x-2 space-x-reverse text-sm">
-              <div class="h-4 w-4 text-muted-foreground">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <span class="text-muted-foreground">{{ $t('vehicle') }}:</span>
-              <span>{{ getVehicleName(service.vehicle) }}</span>
-            </div>
-          </div>
-          <span :class="[
-            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-            service.status === 'تکمیل شده' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-          ]">
-            {{ service.status }}
-          </span>
-        </div>
-        
-        <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <p class="text-muted-foreground">{{ $t('cost') }}</p>
-            <p>{{ service.cost ? service.cost.toLocaleString() + ' ریال' : $t('notSet') }}</p>
-          </div>
-          <div>
-            <p class="text-muted-foreground">{{ $t('date') }}</p>
-            <p>{{ service.date }}</p>
-          </div>
-        </div>
-        
-        <div class="mt-6 flex space-x-3 space-x-reverse">
-          <button 
-            v-if="service.status === 'زمان‌بندی شده'" 
-            @click="markAsCompleted(service)"
-            class="flex-1 bg-primary text-primary-foreground py-2 rounded-md hover:bg-primary/90 text-sm"
-          >
-            {{ $t('markAsCompleted') }}
-          </button>
-          <button 
-            v-else
-            class="flex-1 bg-secondary text-secondary-foreground py-2 rounded-md hover:bg-secondary/90 text-sm"
-            disabled
-          >
-            {{ $t('completed') }}
-          </button>
-          <button @click="editService(service)" class="flex-1 border border-border py-2 rounded-md hover:bg-muted text-sm">
-            {{ $t('edit') }}
-          </button>
-          <button @click="deleteService(service)" class="flex-1 border border-border py-2 rounded-md hover:bg-muted text-sm text-destructive">
-            {{ $t('delete') }}
-          </button>
-        </div>
+    <div class="bg-card border border-border rounded-lg p-6">
+      <h2 class="text-xl font-semibold mb-4">{{ $t('upcomingServices') }}</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-border">
+          <thead>
+            <tr>
+              <th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">{{ $t('serviceName') }}</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">{{ $t('vehicle') }}</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">{{ $t('cost') }}</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">{{ $t('date') }}</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">{{ $t('status') }}</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">{{ $t('actions') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            <tr v-for="service in services" :key="service.id">
+              <td class="px-4 py-3 whitespace-nowrap">{{ service.name }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">{{ getVehicleName(service.vehicle) }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">{{ service.cost ? service.cost.toLocaleString() + ' ریال' : $t('free') }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm">{{ service.date }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="{
+                  'bg-yellow-100 text-yellow-800': service.status === 'زمان‌بندی شده',
+                  'bg-green-100 text-green-800': service.status === 'تکمیل شده',
+                  'bg-blue-100 text-blue-800': service.status === 'در حال انجام'
+                }">
+                  {{ service.status }}
+                </span>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm space-x-2 space-x-reverse">
+                <button @click="editService(service)" class="text-primary hover:text-primary/80">{{ $t('edit') }}</button>
+                <button class="text-destructive hover:text-destructive/80">{{ $t('cancel') }}</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
     
     <!-- Schedule Service Modal -->
     <div v-if="showScheduleModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div class="bg-card border border-border rounded-lg p-6 w-full max-w-md">
-        <h2 class="text-xl font-semibold mb-4">{{ $t('scheduleNewService') }}</h2>
+        <h2 class="text-xl font-semibold mb-4">{{ $t('scheduleService') }}</h2>
         <form @submit.prevent="scheduleService" class="space-y-4">
           <div>
             <label class="block text-sm font-medium mb-1">{{ $t('serviceName') }}</label>
-            <select v-model="newService.name" class="w-full border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required>
-              <option value="">{{ $t('selectService') }}</option>
-              <option value="تعویض روغن">{{ $t('oilChange') }}</option>
-              <option value="چرخش تایر">{{ $t('tireRotation') }}</option>
-              <option value="بررسی ترمز">{{ $t('brakeInspection') }}</option>
-              <option value="تعمیر موتور">{{ $t('engineTuneUp') }}</option>
-              <option value="تعویض لنت ترمز">{{ $t('brakePadReplacement') }}</option>
-              <option value="تعویض باتری">{{ $t('batteryReplacement') }}</option>
-              <option value="بررسی سیستم خنک کننده">{{ $t('coolingSystemInspection') }}</option>
-            </select>
+            <input v-model="newService.name" type="text" class="w-full border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required>
           </div>
           
           <div>
@@ -90,7 +61,7 @@
             <select v-model="newService.vehicle" class="w-full border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required>
               <option value="">{{ $t('selectVehicle') }}</option>
               <option v-for="vehicle in vehicles" :key="vehicle.id" :value="vehicle.id">
-                {{ vehicle.brand }} {{ vehicle.model }} - {{ vehicle.licensePlate }}
+                {{ vehicle.brand }} {{ vehicle.model }} - {{ formatLicensePlateForDisplay(vehicle.licensePlate) }}
               </option>
             </select>
           </div>
@@ -110,7 +81,7 @@
           
           <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 sm:space-x-reverse pt-4">
             <button type="submit" class="flex-1 bg-primary text-primary-foreground py-2 rounded-md hover:bg-primary/90">
-              {{ $t('save') }}
+              {{ $t('schedule') }}
             </button>
             <button @click="showScheduleModal = false" type="button" class="flex-1 border border-border py-2 rounded-md hover:bg-muted">
               {{ $t('cancel') }}
@@ -127,16 +98,7 @@
         <form @submit.prevent="updateService" class="space-y-4">
           <div>
             <label class="block text-sm font-medium mb-1">{{ $t('serviceName') }}</label>
-            <select v-model="editingService.name" class="w-full border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required>
-              <option value="">{{ $t('selectService') }}</option>
-              <option value="تعویض روغن">{{ $t('oilChange') }}</option>
-              <option value="چرخش تایر">{{ $t('tireRotation') }}</option>
-              <option value="بررسی ترمز">{{ $t('brakeInspection') }}</option>
-              <option value="تعمیر موتور">{{ $t('engineTuneUp') }}</option>
-              <option value="تعویض لنت ترمز">{{ $t('brakePadReplacement') }}</option>
-              <option value="تعویض باتری">{{ $t('batteryReplacement') }}</option>
-              <option value="بررسی سیستم خنک کننده">{{ $t('coolingSystemInspection') }}</option>
-            </select>
+            <input v-model="editingService.name" type="text" class="w-full border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required>
           </div>
           
           <div>
@@ -144,7 +106,7 @@
             <select v-model="editingService.vehicle" class="w-full border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required>
               <option value="">{{ $t('selectVehicle') }}</option>
               <option v-for="vehicle in vehicles" :key="vehicle.id" :value="vehicle.id">
-                {{ vehicle.brand }} {{ vehicle.model }} - {{ vehicle.licensePlate }}
+                {{ vehicle.brand }} {{ vehicle.model }} - {{ formatLicensePlateForDisplay(vehicle.licensePlate) }}
               </option>
             </select>
           </div>
@@ -208,7 +170,7 @@ export default {
           id: 1,
           brand: 'پژو',
           model: '206',
-          licensePlate: '123ب456-78'
+          licensePlate: '59م648-88'
         },
         {
           id: 2,
@@ -246,27 +208,10 @@ export default {
     }
   },
   methods: {
-    getServiceStatusVariant(status) {
-      switch (status) {
-        case 'تکمیل شده':
-          return 'secondary';
-        case 'زمان‌بندی شده':
-          return 'default';
-        default:
-          return 'default';
-      }
-    },
-    getVehicleName(vehicleId) {
-      const vehicle = this.vehicles.find(v => v.id === vehicleId);
-      return vehicle ? `${vehicle.brand} ${vehicle.model}` : 'نامشخص';
-    },
     scheduleService() {
       const service = {
+        ...this.newService,
         id: this.services.length + 1,
-        name: this.newService.name,
-        vehicle: this.newService.vehicle,
-        cost: this.newService.cost,
-        date: this.newService.date,
         status: 'زمان‌بندی شده'
       };
       this.services.push(service);
@@ -278,97 +223,39 @@ export default {
       };
       this.showScheduleModal = false;
     },
-    markAsCompleted(service) {
-      const index = this.services.findIndex(s => s.id === service.id);
-      if (index !== -1) {
-        this.services[index].status = 'تکمیل شده';
-      }
-    },
-    editService(service) {
-      this.editingService = {
-        id: service.id,
-        name: service.name,
-        vehicle: service.vehicle,
-        cost: service.cost,
-        date: service.date
-      };
-      this.showEditModal = true;
-    },
     updateService() {
       const index = this.services.findIndex(s => s.id === this.editingService.id);
       if (index !== -1) {
-        this.services[index] = {
-          id: this.editingService.id,
-          name: this.editingService.name,
-          vehicle: this.editingService.vehicle,
-          cost: this.editingService.cost,
-          date: this.editingService.date,
-          status: this.services[index].status
-        };
+        this.services.splice(index, 1, {...this.editingService});
       }
       this.showEditModal = false;
     },
-    deleteService(service) {
-      if (confirm('آیا از حذف این سرویس اطمینان دارید؟')) {
-        const index = this.services.findIndex(s => s.id === service.id);
-        if (index !== -1) {
-          this.services.splice(index, 1);
-        }
-      }
+    editService(service) {
+      this.editingService = {...service};
+      this.showEditModal = true;
     },
-    // Parse license plate string into component data format
-    parseLicensePlate(plateString) {
-      if (!plateString) {
-        // Return default empty plate
-        return {
-          firstTwoDigits: ['', ''],
-          letter: '',
-          nextThreeDigits: ['', '', ''],
-          lastTwoDigits: ['', ''],
-          motorcycleDigits: ['', '', ''],
-          motorcycleLetter: '',
-          motorcycleLastDigits: ['', '', '']
-        };
-      }
+    getVehicleName(vehicleId) {
+      const vehicle = this.vehicles.find(v => v.id === vehicleId);
+      return vehicle ? `${vehicle.brand} ${vehicle.model}` : 'نامشخص';
+    },
+    formatLicensePlateForDisplay(licensePlate) {
+      // Parse the license plate and format it for display
+      if (!licensePlate) return '';
       
       // Try to parse as car plate (format like "123ب456-78")
-      const carMatch = plateString.match(/^(\d{2})([آابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی])(\d{3})-(\d{2})$/);
+      const carMatch = licensePlate.match(/^(\d{2})([آابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی])(\d{3})-(\d{2})$/);
       if (carMatch) {
-        return {
-          firstTwoDigits: [carMatch[1].charAt(0), carMatch[1].charAt(1)],
-          letter: carMatch[2],
-          nextThreeDigits: [carMatch[3].charAt(0), carMatch[3].charAt(1), carMatch[3].charAt(2)],
-          lastTwoDigits: [carMatch[4].charAt(0), carMatch[4].charAt(1)],
-          motorcycleDigits: ['', '', ''],
-          motorcycleLetter: '',
-          motorcycleLastDigits: ['', '', '']
-        };
+        return `${carMatch[1]}${carMatch[2]}${carMatch[3]}-${carMatch[4]}`;
       }
       
       // Try to parse as motorcycle plate (format like "12345678")
-      const motorcycleMatch = plateString.match(/^(\d{3})([آابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی])(\d{3})$/);
+      const motorcycleMatch = licensePlate.match(/^(\d{3})([آابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی])(\d{3})$/);
       if (motorcycleMatch) {
-        return {
-          firstTwoDigits: ['', ''],
-          letter: '',
-          nextThreeDigits: ['', '', ''],
-          lastTwoDigits: ['', ''],
-          motorcycleDigits: [motorcycleMatch[1].charAt(0), motorcycleMatch[1].charAt(1), motorcycleMatch[1].charAt(2)],
-          motorcycleLetter: motorcycleMatch[2],
-          motorcycleLastDigits: [motorcycleMatch[3].charAt(0), motorcycleMatch[3].charAt(1), motorcycleMatch[3].charAt(2)]
-        };
+        return `${motorcycleMatch[1]}${motorcycleMatch[2]}${motorcycleMatch[3]}`;
       }
       
-      // Default empty plate
-      return {
-        firstTwoDigits: ['', ''],
-        letter: '',
-        nextThreeDigits: ['', '', ''],
-        lastTwoDigits: ['', ''],
-        motorcycleDigits: ['', '', ''],
-        motorcycleLetter: '',
-        motorcycleLastDigits: ['', '', '']
-      };
+      // Return as is if it doesn't match any pattern
+      return licensePlate;
     }
   }
 }

@@ -8,12 +8,20 @@ from beanie import Document
 from pydantic import BaseModel, Field, validator
 import jdatetime  # For Jalali calendar support
 from core.utils import (
-    validate_iranian_license_plate,
-    normalize_license_plate,
     validate_mileage,
     get_iranian_car_brands
 )
-from core.exceptions import InvalidLicensePlateException, InvalidMileageException
+from core.exceptions import InvalidMileageException
+
+
+class LicensePlateData(BaseModel):
+    """
+    Schema for license plate data.
+    """
+    plaqueLeftNo: str = Field(..., description="Left part of the license plate")
+    plaqueMiddleChar: str = Field(..., description="Middle character of the license plate")
+    plaqueRightNo: str = Field(..., description="Right part of the license plate")
+    plaqueSerial: str = Field(..., description="Serial number of the license plate")
 
 
 class Vehicle(Document):
@@ -22,7 +30,7 @@ class Vehicle(Document):
     """
     
     # Vehicle identification
-    license_plate: str = Field(..., description="شماره پلاک خودرو")
+    license_plate_data: LicensePlateData = Field(..., description="اطلاعات پلاک خودرو")
     brand: str = Field(..., description="برند خودرو")
     model: str = Field(..., description="مدل خودرو")
     manufacture_year: int = Field(..., description="سال تولید")
@@ -41,12 +49,6 @@ class Vehicle(Document):
     
     class Settings:
         name = "vehicles"
-    
-    @validator('license_plate')
-    def validate_license_plate(cls, v):
-        if not validate_iranian_license_plate(v):
-            raise InvalidLicensePlateException()
-        return normalize_license_plate(v)
     
     @validator('current_mileage')
     def validate_current_mileage(cls, v):
@@ -68,26 +70,20 @@ class Vehicle(Document):
         return v
     
     def __repr__(self):
-        return f"<Vehicle {self.license_plate}>"
+        return f"<Vehicle {self.license_plate_data.plaqueLeftNo}{self.license_plate_data.plaqueMiddleChar}{self.license_plate_data.plaqueRightNo}-{self.license_plate_data.plaqueSerial}>"
 
 
 class VehicleCreate(BaseModel):
     """
     Schema for creating a new vehicle.
     """
-    license_plate: str = Field(..., description="شماره پلاک خودرو")
+    license_plate_data: LicensePlateData = Field(..., description="اطلاعات پلاک خودرو")
     brand: str = Field(..., description="برند خودرو")
     model: str = Field(..., description="مدل خودرو")
     manufacture_year: int = Field(..., description="سال تولید")
     current_mileage: int = Field(..., description="کیلومتر فعلی")
     last_service_date: Optional[date] = Field(None, description="تاریخ آخرین سرویس")
     last_service_mileage: Optional[int] = Field(None, description="کیلومتر آخرین سرویس")
-    
-    @validator('license_plate')
-    def validate_license_plate(cls, v):
-        if not validate_iranian_license_plate(v):
-            raise InvalidLicensePlateException()
-        return normalize_license_plate(v)
     
     @validator('current_mileage')
     def validate_current_mileage(cls, v):
@@ -113,19 +109,13 @@ class VehicleUpdate(BaseModel):
     """
     Schema for updating a vehicle.
     """
-    license_plate: Optional[str] = Field(None, description="شماره پلاک خودرو")
+    license_plate_data: Optional[LicensePlateData] = Field(None, description="اطلاعات پلاک خودرو")
     brand: Optional[str] = Field(None, description="برند خودرو")
     model: Optional[str] = Field(None, description="مدل خودرو")
     manufacture_year: Optional[int] = Field(None, description="سال تولید")
     current_mileage: Optional[int] = Field(None, description="کیلومتر فعلی")
     last_service_date: Optional[date] = Field(None, description="تاریخ آخرین سرویس")
     last_service_mileage: Optional[int] = Field(None, description="کیلومتر آخرین سرویس")
-    
-    @validator('license_plate')
-    def validate_license_plate(cls, v):
-        if v is not None and not validate_iranian_license_plate(v):
-            raise InvalidLicensePlateException()
-        return normalize_license_plate(v) if v else v
     
     @validator('current_mileage')
     def validate_current_mileage(cls, v):
