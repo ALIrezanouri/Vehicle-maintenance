@@ -41,7 +41,7 @@ export default {
   props: {
     modelValue: {
       type: String,
-      default: null
+      default: ''
     }
   },
   emits: ['update:modelValue'],
@@ -54,7 +54,10 @@ export default {
   },
   computed: {
     jalaliDate() {
-      return toJalali(this.currentDate);
+      const gy = this.currentDate.getFullYear();
+      const gm = this.currentDate.getMonth() + 1;
+      const gd = this.currentDate.getDate();
+      return toJalali(gy, gm, gd);
     },
     currentYear() {
       return this.jalaliDate.jy;
@@ -69,9 +72,7 @@ export default {
       return getDaysInMonth(this.currentYear, this.currentMonth);
     },
     firstDayOfMonthOffset() {
-      const firstDay = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
-      const jalaliFirstDay = toJalali(firstDay);
-      return getDayOfWeek(jalaliFirstDay.jy, jalaliFirstDay.jm, 1);
+      return getDayOfWeek(this.currentYear, this.currentMonth, 1);
     },
     formattedDate() {
       if (this.modelValue) {
@@ -93,9 +94,9 @@ export default {
       const selectedJalaliDate = { jy: this.currentYear, jm: this.currentMonth, jd: day };
       const gregorianDate = toGregorian(selectedJalaliDate.jy, selectedJalaliDate.jm, selectedJalaliDate.jd);
       
-      const year = gregorianDate.getFullYear();
-      const month = (gregorianDate.getMonth() + 1).toString().padStart(2, '0');
-      const dayOfMonth = gregorianDate.getDate().toString().padStart(2, '0');
+      const year = gregorianDate.gy;
+      const month = gregorianDate.gm.toString().padStart(2, '0');
+      const dayOfMonth = gregorianDate.gd.toString().padStart(2, '0');
       
       const formatted = `${year}/${month}/${dayOfMonth}`;
       this.$emit('update:modelValue', formatted);
@@ -104,8 +105,7 @@ export default {
     isSelected(day) {
       if (!this.modelValue) return false;
       const [year, month, dayOfMonth] = this.modelValue.split('/').map(Number);
-      const gregorianModelDate = new Date(year, month - 1, dayOfMonth);
-      const jalaliModelDate = toJalali(gregorianModelDate);
+      const jalaliModelDate = toJalali(year, month, dayOfMonth);
 
       return (
         jalaliModelDate.jy === this.currentYear &&
@@ -121,7 +121,7 @@ export default {
       if (jalaliRegex.test(value)) {
         this.$emit('update:modelValue', value);
       } else if (value === '') {
-        this.$emit('update:modelValue', null);
+        this.$emit('update:modelValue', '');
       }
       // Keep calendar hidden if typing
       this.showCalendar = false;
